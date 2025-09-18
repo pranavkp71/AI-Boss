@@ -23,12 +23,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         description = data.get('description', '')
         is_ai_suggested = data.get('suggest', False)
 
-        project = Project.objects.create(title=title, description=description, owner=request.user, is_ai_suggested=is_ai_suggested)
+        project = Project.objects.create(title=title, 
+                                         description=description, 
+                                         owner=request.user, 
+                                         is_ai_suggested=is_ai_suggested)
 
         # Mock AI
-        Task.objects.create(project=project, title="Serup project structure", description="Initialize repo and basic structure")
-        Task.objects.create(project=project, title="Create models", description="Implement Project, Task, ProgressReport models")
-        Task.objects.create(project=project, title="Integrate AI review", description="Create endpoint for progress review")
+        Task.objects.create(project=project, title="Serup project structure", 
+                            description="Initialize repo and basic structure")
+        Task.objects.create(project=project, title="Create models", 
+                            description="Implement Project, Task, ProgressReport models")
+        Task.objects.create(project=project, title="Integrate AI review", 
+                            description="Create endpoint for progress review")
         serializer = ProjectSerializer(project, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
@@ -44,7 +50,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def submit_progress(self, request, pk=None):
         task = self.get_object()
         notes = request.data.get('notes', '')
-        report = ProgressReport.objects.create(task=task, author=request.author, notes=notes)
+        report = ProgressReport.objects.create(task=task, 
+                                               author=request.author, 
+                                               notes=notes)
 
         # Mock AI review
         feedback = {
@@ -56,4 +64,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = ProgressReportSerializer(report, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    
+
+class ProgressReportViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProgressReport.objects.all().order_by('-created_at')
+    serializer_class = ProgressReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ProgressReport.objects.filter(author=self.request.user) | ProgressReport.objects.filter(task__project__owner=self.request.user)
