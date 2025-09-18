@@ -51,7 +51,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         notes = request.data.get('notes', '')
         report = ProgressReport.objects.create(task=task, 
-                                               author=request.author, 
+                                               author=request.user, 
                                                notes=notes)
 
         # Mock AI review
